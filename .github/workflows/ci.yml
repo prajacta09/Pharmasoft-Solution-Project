@@ -50,11 +50,29 @@ jobs:
     - name: Install Playwright browsers
       run: npx playwright install chromium
     
+    - name: Create environment file
+      run: |
+        echo "BASE_URL=${{ secrets.BASE_URL || 'https://pharmasoftsol.com/' }}" > .env
+        echo "HEADLESS=true" >> .env
+        echo "NODE_ENV=test" >> .env
+        echo "Created .env file:"
+        cat .env
+    
+    - name: Debug - Check files and structure
+      run: |
+        echo "Current directory:"
+        pwd
+        echo "Files in current directory:"
+        ls -la
+        echo "Features directory:"
+        ls -la features/ || echo "Features directory not found"
+        echo "Step definitions directory:"
+        ls -la step-definitions/ || echo "Step definitions directory not found"
+        echo "Package.json test script:"
+        grep -A 5 '"test"' package.json
+    
     - name: Run tests
       run: npm test
-      env:
-        BASE_URL: ${{ secrets.BASE_URL || 'https://pharmasoftsol.com/' }}
-        HEADLESS: true
     
     - name: Upload test artifacts
       uses: actions/upload-artifact@v3

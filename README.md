@@ -1,5 +1,8 @@
 # Pharmasoft UI Automation Framework
 
+[![CI/CD](https://github.com/prajacta09/Pharmasoft-Solution-Project/actions/workflows/ci.yml/badge.svg)](https://github.com/prajacta09/Pharmasoft-Solution-Project/actions/workflows/ci.yml)
+[![Allure Report](https://img.shields.io/badge/Allure-Report-blue)](https://prajacta09.github.io/Pharmasoft-Solution-Project/allure-report/)
+
 A lightweight, production-ready UI automation framework using Playwright, Cucumber, and BDD with AI integration.
 
 ## Tech Stack
