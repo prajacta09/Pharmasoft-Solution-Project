@@ -1,0 +1,208 @@
+name: UI Automation Tests - Enhanced
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of tests to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - smoke
+        - regression
+
+env:
+  NODE_VERSION: '18'
+  BASE_URL: 'https://pharmasoftsol.com/'
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Generate cache key
+      id: cache-key
+      run: echo "key=${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}" >> $GITHUB_OUTPUT
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Install Playwright browsers
+      run: npx playwright install chromium
+    
+    - name: Cache Playwright browsers
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-
+
+  test:
+    runs-on: ubuntu-latest
+    needs: install
+    strategy:
+      matrix:
+        test-type: [smoke, regression]
+        include:
+          - test-type: smoke
+            tags: "@smoke"
+            parallel: 1
+          - test-type: regression
+            tags: "@regression"
+            parallel: 2
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Install Playwright browsers
+      run: npx playwright install chromium
+    
+    - name: Run ${{ matrix.test-type }} tests
+      run: npm run test:${{ matrix.test-type }}
+      env:
+        HEADLESS: true
+        BASE_URL: ${{ env.BASE_URL }}
+    
+    - name: Upload test artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.test-type }}
+        path: |
+          screenshots/
+          allure-results/
+          reports/
+        retention-days: 7
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run security audit
+      run: npm audit --audit-level high
+    
+    - name: Run dependency check
+      run: npx audit-ci --moderate
+
+  report:
+    runs-on: ubuntu-latest
+    needs: [test, security-scan]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Download smoke test artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: test-results-smoke
+        path: artifacts/smoke/
+    
+    - name: Download regression test artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: test-results-regression
+        path: artifacts/regression/
+    
+    - name: Merge test results
+      run: |
+        mkdir -p allure-results reports screenshots
+        cp -r artifacts/*/allure-results/* allure-results/ 2>/dev/null || true
+        cp -r artifacts/*/reports/* reports/ 2>/dev/null || true
+        cp -r artifacts/*/screenshots/* screenshots/ 2>/dev/null || true
+    
+    - name: Generate Allure report
+      run: npm run allure:generate
+    
+    - name: Generate test summary
+      run: |
+        echo "# Test Execution Summary" > summary.md
+        echo "- **Branch**: ${{ github.ref_name }}" >> summary.md
+        echo "- **Commit**: ${{ github.sha }}" >> summary.md
+        echo "- **Date**: $(date)" >> summary.md
+        echo "- **Tests**: Smoke + Regression" >> summary.md
+        echo "- **Status**: ${{ job.status }}" >> summary.md
+    
+    - name: Upload report artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: allure-report
+        path: |
+          allure-report/
+          summary.md
+        retention-days: 30
+    
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./allure-report
+        destination_dir: allure-report
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, security-scan, report]
+    if: always()
+    steps:
+    - name: Notify on success
+      if: needs.test.result == 'success' && needs.security-scan.result == 'success'
+      run: |
+        echo "## CI/CD Pipeline Success! 
+        - All tests passed
+        - Security scan passed
+        - Reports generated and deployed"
+    
+    - name: Notify on failure
+      if: needs.test.result == 'failure' || needs.security-scan.result == 'failure'
+      run: |
+        echo "## CI/CD Pipeline Failed!
+        - Test status: ${{ needs.test.result }}
+        - Security status: ${{ needs.security-scan.result }}
+        Please check the logs and fix the issues."

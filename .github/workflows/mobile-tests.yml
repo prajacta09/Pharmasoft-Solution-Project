@@ -1,0 +1,58 @@
+name: Mobile UI Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run mobile tests weekly on Sunday at 3 AM UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+jobs:
+  mobile-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        device: ['iPhone 12', 'Pixel 5', 'iPad']
+        orientation: ['portrait', 'landscape']
+        exclude:
+          - device: iPad
+            orientation: landscape
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Install Playwright browsers
+      run: npx playwright install chromium
+    
+    - name: Run mobile tests on ${{ matrix.device }} (${{ matrix.orientation }})
+      run: |
+        # Create mobile context configuration
+        echo "Running tests on ${{ matrix.device }} in ${{ matrix.orientation }}"
+        
+        # You can modify your test script to accept device parameters
+        DEVICE="${{ matrix.device }}" ORIENTATION="${{ matrix.orientation }}" npm test
+      env:
+        HEADLESS: true
+        DEVICE: ${{ matrix.device }}
+        ORIENTATION: ${{ matrix.orientation }}
+    
+    - name: Upload mobile test artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: mobile-test-results-${{ matrix.device }}-${{ matrix.orientation }}
+        path: |
+          screenshots/
+          allure-results/
+        retention-days: 7

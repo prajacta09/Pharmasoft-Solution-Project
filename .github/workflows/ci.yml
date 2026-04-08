@@ -53,6 +53,7 @@ jobs:
     - name: Run tests
       run: npm test
       env:
+        BASE_URL: ${{ secrets.BASE_URL || 'https://pharmasoftsol.com/' }}
         HEADLESS: true
     
     - name: Upload test artifacts
