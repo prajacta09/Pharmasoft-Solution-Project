@@ -75,7 +75,7 @@ jobs:
       run: npm test
     
     - name: Upload test artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results
@@ -102,7 +102,7 @@ jobs:
       run: npm ci
     
     - name: Download test artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: test-results
     
@@ -110,7 +110,7 @@ jobs:
       run: npm run allure:generate
     
     - name: Upload report artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: allure-report
         path: allure-report/
