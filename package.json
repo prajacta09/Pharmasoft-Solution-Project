@@ -1,0 +1,36 @@
+{
+  "name": "pharmasoft-ui-automation",
+  "version": "1.0.0",
+  "description": "Lightweight UI Automation Framework with Playwright and Cucumber",
+  "main": "index.js",
+  "scripts": {
+    "test": "cucumber-js",
+    "test:smoke": "cucumber-js --tags @smoke",
+    "test:regression": "cucumber-js --tags @regression",
+    "allure:generate": "allure generate ./allure-results --clean",
+    "allure:open": "allure open ./allure-report",
+    "test:report": "npm test && npm run allure:generate"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prajacta09/Pharmasoft-Solution-Project.git"
+  },
+  "keywords": [
+    "playwright",
+    "cucumber",
+    "automation",
+    "testing"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@cucumber/cucumber": "^10.9.0",
+    "dotenv": "^16.6.1",
+    "playwright": "^1.59.1"
+  },
+  "devDependencies": {
+    "allure-commandline": "^2.38.1",
+    "allure-js-commons": "^3.7.0"
+  }
+}
