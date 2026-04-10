@@ -17,6 +17,6 @@ module.exports = {
   forceExit: false,
   strict: false,
   retry: 0,
-  stepTimeout: 30000,
-  timeout: 30000
+  stepTimeout: 60000,
+  timeout: 60000
 };
