@@ -8,7 +8,7 @@ Before(async function () {
   this.log('Step: Launching browser');
   
   this.browser = await chromium.launch({ 
-    headless: false, // Changed to false for proper screenshot capture
+    headless: true, // Set back to true for CI/CD execution
     slowMo: 1000
   });
   
