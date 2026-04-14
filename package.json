@@ -7,8 +7,8 @@
     "test": "cucumber-js --require \"./step-definitions/**/*.js\" \"./features/**/*.feature\" --require-module dotenv/config",
     "test:smoke": "cucumber-js --tags @smoke --require \"./step-definitions/**/*.js\" \"./features/**/*.feature\" --require-module dotenv/config",
     "test:regression": "cucumber-js --tags @regression --require \"./step-definitions/**/*.js\" \"./features/**/*.feature\" --require-module dotenv/config",
-    "allure:generate": "allure generate ./allure-results --clean",
-    "allure:open": "allure open ./allure-report",
+    "allure:generate": "node scripts/generate-report.js",
+    "allure:open": "start allure-report/index.html",
     "test:report": "npm test && npm run allure:generate"
   },
   "repository": {
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "allure-commandline": "^2.38.1",
+    "allure-cucumberjs": "^3.7.1",
     "allure-js-commons": "^3.7.0"
   }
 }

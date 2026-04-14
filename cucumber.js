@@ -4,7 +4,8 @@ module.exports = {
   format: [
     'progress',
     'json:./reports/cucumber-report.json',
-    'html:./reports/cucumber-report.html'
+    'html:./reports/cucumber-report.html',
+    'allure-cucumberjs'
   ],
   require: [
     './step-definitions/**/*.js'
@@ -17,6 +18,6 @@ module.exports = {
   forceExit: false,
   strict: false,
   retry: 0,
-  stepTimeout: 60000,
-  timeout: 60000
+  stepTimeout: 30000,
+  timeout: 30000
 };

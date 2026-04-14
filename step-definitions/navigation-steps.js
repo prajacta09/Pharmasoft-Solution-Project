@@ -13,6 +13,20 @@ Given('the page loads successfully', async function () {
     throw new Error('Page title is empty - page may not have loaded properly');
   }
   this.log(`Page loaded successfully with title: ${title}`);
+  
+  // Capture screenshot after successful page load
+  try {
+    await this.page.waitForTimeout(1000); // Wait for content to render
+    const screenshotPath = `screenshots/page-loaded-${Date.now()}.png`;
+    await this.page.screenshot({ 
+      path: screenshotPath, 
+      fullPage: true,
+      animations: 'disabled'
+    });
+    this.log(`Page load screenshot captured: ${screenshotPath}`);
+  } catch (error) {
+    this.log(`Error capturing page load screenshot: ${error.message}`);
+  }
 });
 
 When('I look for all navigation menus', async function () {

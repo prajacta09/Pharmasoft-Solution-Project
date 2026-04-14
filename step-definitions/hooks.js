@@ -8,7 +8,7 @@ Before(async function () {
   this.log('Step: Launching browser');
   
   this.browser = await chromium.launch({ 
-    headless: true,
+    headless: false, // Changed to false for proper screenshot capture
     slowMo: 1000
   });
   
@@ -27,12 +27,24 @@ After(async function (scenario) {
   this.log('Step: Capturing final screenshot');
   
   if (this.page) {
-    const screenshotPath = path.join('screenshots', `final-${Date.now()}.png`);
-    await this.page.screenshot({ path: screenshotPath, fullPage: true });
-    
-    if (fs.existsSync(screenshotPath)) {
-      const screenshotBuffer = fs.readFileSync(screenshotPath);
-      await this.attachScreenshot(screenshotBuffer, 'Final Screenshot');
+    try {
+      // Wait for page to be fully loaded before screenshot
+      await this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
+      
+      const screenshotPath = path.join('screenshots', `final-${Date.now()}.png`);
+      await this.page.screenshot({ 
+        path: screenshotPath, 
+        fullPage: true,
+        animations: 'disabled'
+      });
+      
+      if (fs.existsSync(screenshotPath)) {
+        const screenshotBuffer = fs.readFileSync(screenshotPath);
+        await this.attachScreenshot(screenshotBuffer, 'Final Screenshot');
+        this.log(`Final screenshot captured: ${screenshotPath}`);
+      }
+    } catch (error) {
+      this.log(`Error capturing final screenshot: ${error.message}`);
     }
   }
   
@@ -47,15 +59,27 @@ AfterStep(async function (scenario) {
   this.log('Step: Capturing screenshot after step');
   
   if (this.page) {
-    const stepName = scenario.pickle.name || 'step';
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const screenshotPath = path.join('screenshots', `${stepName}-${timestamp}.png`);
-    
-    await this.page.screenshot({ path: screenshotPath, fullPage: true });
-    
-    if (fs.existsSync(screenshotPath)) {
-      const screenshotBuffer = fs.readFileSync(screenshotPath);
-      await this.attachScreenshot(screenshotBuffer, `Screenshot after: ${stepName}`);
+    try {
+      // Wait a bit for page to stabilize before screenshot
+      await this.page.waitForTimeout(500);
+      
+      const stepName = scenario.pickle.name || 'step';
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const screenshotPath = path.join('screenshots', `${stepName}-${timestamp}.png`);
+      
+      await this.page.screenshot({ 
+        path: screenshotPath, 
+        fullPage: true,
+        animations: 'disabled'
+      });
+      
+      if (fs.existsSync(screenshotPath)) {
+        const screenshotBuffer = fs.readFileSync(screenshotPath);
+        await this.attachScreenshot(screenshotBuffer, `Screenshot after: ${stepName}`);
+        this.log(`Step screenshot captured: ${screenshotPath}`);
+      }
+    } catch (error) {
+      this.log(`Error capturing step screenshot: ${error.message}`);
     }
   }
 });
